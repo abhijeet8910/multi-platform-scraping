@@ -1,291 +1,149 @@
-Multi-Platform Profile Scraping via HTML Handoff
+# 🕸️ Multi-Platform Profile Scraping via HTML Handoff
 
-LinkedIn + Instagram
+> **A production-grade scraping architecture using Chrome Extension (Manifest V3) + Node.js.**
 
-📌 Project Summary
+## 📌 Project Overview
 
-This project implements a production-grade scraping system using a Chrome Extension (Manifest V3) and a Node.js backend, following strict separation of concerns.
+This project implements a scraping system that enforces a strict **separation of concerns**. It uses a "dumb" Chrome Extension to capture authenticated HTML and a "smart" Node.js backend to handle parsing, logic, and storage.
 
-The Chrome extension acts only as a data courier, capturing the full authenticated HTML of a profile page and sending it to the backend.
-The backend is solely responsible for platform detection, HTML parsing, scraping logic, and database storage.
+This architecture mimics professional browser-based data capture systems, ensuring that scraping logic is decoupled from the browser context, making the system more resilient to DOM changes and easier to maintain.
 
-This architecture mirrors how real-world browser-based data capture systems are designed in professional environments.
+---
 
-🎯 Core Objectives
+## 🧠 Architectural Philosophy
 
-Capture full HTML of authenticated profile pages
+**The Golden Rule:**
+> **Extension = Courier (Dumb)**
+> **Backend = Processor (Smart)**
 
-Support LinkedIn and Instagram profiles
+### Responsibilities
 
-Do no scraping or parsing inside the extension
+| Component | 🟢 DOs (Responsibilities) | 🔴 DON'Ts (Strictly Prohibited) |
+| :--- | :--- | :--- |
+| **Chrome Extension** | • Detect active tab<br>• Read current URL<br>• Capture `document.documentElement.outerHTML`<br>• Send `{url, html}` to API | • No scraping/parsing logic<br>• No platform detection<br>• No business logic<br>• No DOM manipulation |
+| **Node.js Backend** | • Detect platform via URL pattern<br>• Route to correct scraper<br>• Parse HTML (Cheerio)<br>• Handle errors & missing data<br>• Persist to SQLite | • N/A |
 
-Route scraping logic based on URL patterns
+### Request Flow
+1. **User** manually logs into LinkedIn/Instagram and navigates to a profile.
+2. **User** clicks "Send Page to Backend".
+3. **Extension** captures HTML & URL ➡️ POST request to Backend.
+4. **Backend** detects platform ➡️ Parses Data ➡️ Saves to SQLite.
+5. **Extension** receives success signal ➡️ Displays "✅ Data saved successfully".
 
-Extract structured profile data
+---
 
-Persist scraped data using SQLite + Sequelize
+## 🛠️ Tech Stack
 
-Provide clear success/error feedback to the user
+* **Frontend (Extension):** HTML, CSS, Vanilla JS, Chrome Manifest V3
+* **Backend (API):** Node.js, Express
+* **Parsing Engine:** Cheerio
+* **Database:** SQLite3
+* **ORM:** Sequelize
 
-🧠 Architectural Philosophy
-Key Design Rule
+---
 
-Extension = dumb
-Backend = smart
+## 📊 Data Extraction & Support
 
-This rule is strictly enforced throughout the project.
+The backend automatically routes logic based on the URL structure.
 
-Chrome Extension Responsibilities
+### 1. LinkedIn (`linkedin.com/in/*`)
+* **Name**
+* **Headline**
+* **Location**
+* **About Section**
+* **Follower Count**
+* **Connection Count**
 
-The extension is responsible only for:
+### 2. Instagram (`instagram.com/{username}`)
+* *Note: Posts/Reels/Explore pages are ignored.*
+* **Username**
+* **Display Name**
+* **Bio**
+* **Post Count**
+* **Follower Count**
+* **Following Count**
 
-Detecting the active browser tab
+---
 
-Reading the current page URL
+## 💾 Database Design
 
-Capturing document.documentElement.outerHTML
+We use **SQLite + Sequelize** for a zero-setup, portable database solution.
 
-Sending { url, html } to the backend API
+**Schema Strategy:**
+To handle UI changes without constant schema migrations, specific profile details are stored in a JSON column.
 
-Displaying a simple success or error message
+* **Platform:** String (`linkedin` | `instagram`)
+* **Profile URL:** String (Unique)
+* **Extracted Data:** JSON (Stores the parsed fields)
+* **Timestamps:** CreatedAt / UpdatedAt
 
-The extension does NOT:
+---
 
-Scrape data
+## 🚀 Getting Started
 
-Parse HTML
+### Prerequisites
+* Node.js installed
+* Google Chrome browser
 
-Detect platforms
+### Part 1: Setting up the Backend
 
-Handle business logic
+1.  Navigate to the server directory:
+    ```bash
+    cd backend
+    ```
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+3.  Start the server:
+    ```bash
+    npm start
+    ```
+    * Server runs on: `http://localhost:4000`
+    * Database is created automatically on startup.
 
-Backend Responsibilities
+### Part 2: Installing the Extension
 
-The backend is responsible for:
+1.  Open Chrome and navigate to: `chrome://extensions`
+2.  Toggle **Developer Mode** (top right corner).
+3.  Click **Load unpacked**.
+4.  Select the `extension` folder from this project.
 
-Detecting the platform using URL patterns
+---
 
-Routing HTML to the correct scraper
+## 🧪 Usage Guide
 
-Parsing HTML using Cheerio
+1.  Ensure the **Backend** is running (`http://localhost:4000`).
+2.  Open Chrome and log in to **LinkedIn** or **Instagram**.
+3.  Navigate to a specific user profile (e.g., `https://www.linkedin.com/in/williamhgates/`).
+4.  Click the Extension icon in your toolbar.
+5.  Click the **"Send Page to Backend"** button.
+6.  **Success:** You will see a "✅ Data saved successfully" message.
+7.  **Error:** Check the popup console (`Right-click popup` -> `Inspect` -> `Console`) or backend terminal logs.
 
-Extracting structured profile data
+---
 
-Handling missing or partial data safely
+## 🔐 Constraints & Compliance
 
-Persisting results in a database
+This project is built with specific ethical and technical constraints:
+* ✅ **Manifest V3:** Fully compliant with modern Chrome standards.
+* ✅ **Manual Login:** Relies on the user's existing authentication session.
+* ✅ **No Headless Browsers:** No Puppeteer/Playwright used.
+* ✅ **No Automation:** No credential injection or CAPTCHA bypassing.
+* ✅ **Safe Parsing:** If a field is missing, the scraper proceeds without crashing.
 
-Returning a clean JSON response
+---
 
-🔀 URL-Based Platform Detection
+## 📈 Future Roadmap
 
-Platform detection happens only on the backend, based on URL patterns.
+* [ ] Add duplicate prevention (Upsert logic).
+* [ ] Add Profile History tracking (track changes over time).
+* [ ] Support for Twitter/X and GitHub profiles.
+* [ ] Export data to CSV/JSON.
+* [ ] Frontend Dashboard to view scraped profiles.
 
-LinkedIn
+---
 
-Detected when the URL contains:
+## 📝 License
 
-linkedin.com/in/
-
-Instagram
-
-Detected when the URL matches:
-
-instagram.com/{username}
-
-
-Instagram posts, reels, and explore pages are intentionally ignored.
-
-This approach allows easy addition of new platforms without touching the extension code.
-
-📊 Data Extracted
-LinkedIn Profile Data
-
-Name
-
-Headline
-
-Location
-
-About section
-
-Follower count
-
-Connection count
-
-Instagram Profile Data
-
-Username
-
-Display name
-
-Bio
-
-Post count
-
-Follower count
-
-Following count
-
-All fields are optional-safe.
-If a field is missing, scraping continues without crashing.
-
-💾 Database Design
-Why SQLite + Sequelize?
-
-Zero setup (single file database)
-
-Perfect for demos, assignments, and interviews
-
-Sequelize teaches real ORM concepts used in production
-
-Easy migration to PostgreSQL or MySQL later
-
-Storage Strategy
-
-A single Profile entity stores:
-
-Platform (linkedin or instagram)
-
-Profile URL
-
-Extracted data (stored as JSON)
-
-Creation timestamps
-
-This flexible schema avoids frequent schema changes when platforms update their UI.
-
-🔁 Request Flow (End-to-End)
-
-User manually logs into LinkedIn or Instagram
-
-User opens a profile page
-
-User clicks “Send Page to Backend”
-
-Extension captures:
-
-Current page URL
-
-Full HTML of the page
-
-Extension sends data to backend via POST request
-
-Backend:
-
-Detects platform
-
-Applies correct scraper
-
-Extracts profile data
-
-Saves data to SQLite database
-
-Backend returns a success response
-
-Popup shows “✅ Data saved successfully”
-
-Backend response is logged in popup DevTools console
-
-🚀 How to Run the Project
-Backend
-
-Install dependencies
-
-Start the Node.js server
-
-Ensure the backend is running on:
-
-http://localhost:4000
-
-
-On startup:
-
-SQLite database is created automatically
-
-Tables are synced using Sequelize
-
-Chrome Extension
-
-Open chrome://extensions
-
-Enable Developer Mode
-
-Load the extension as an unpacked extension
-
-Open a LinkedIn or Instagram profile (must be logged in)
-
-Click “Send Page to Backend”
-
-✅ Expected Behavior
-Supported Pages
-
-Popup shows:
-✅ Data saved successfully
-
-Data is persisted in SQLite
-
-Backend response is logged in popup console
-
-Unsupported Pages
-
-Popup shows an error message
-
-No backend request is made
-
-🧪 Debugging & Logs
-Extension Logs
-
-Available in Popup DevTools
-
-Access via:
-
-chrome://extensions
-
-Inspect views → popup → Console
-
-Backend Logs
-
-Visible in terminal
-
-Includes database connection and error logs
-
-🔐 Constraints & Rules Followed
-
-✅ Manifest V3 only
-
-✅ Manual user login required
-
-✅ No scraping logic in extension
-
-✅ No headless browsers
-
-✅ No Puppeteer or Playwright
-
-✅ No credential automation
-
-✅ No captcha bypass
-
-✅ No third-party scraping APIs
-
-✅ Backend-only HTML parsing
-
-✅ Clean separation of concerns
-
-📈 Scalability & Future Enhancements
-
-This architecture can be easily extended to:
-
-Prevent duplicate profile saves
-
-Track profile history over time
-
-Add more platforms (Twitter, GitHub, Facebook)
-
-Export scraped data (CSV / JSON)
-
-Build a frontend dashboard
-
-Replace SQLite with PostgreSQL or MySQL
-
-Add authentication & rate limiting
+This project is for educational purposes to demonstrate separation of concerns in web extension architecture.

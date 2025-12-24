@@ -1,0 +1,18 @@
+{
+    "manifest_version": 3,
+    "name": "Profile HTML Sender",
+    "version": "1.0",
+    "description": "Sends page HTML to backend for scraping",
+  
+    "action": {
+      "default_popup": "popup.html"
+    },
+  
+    "permissions": ["tabs", "scripting"],
+  
+    "host_permissions": [
+      "https://www.linkedin.com/*",
+      "https://www.instagram.com/*"
+    ]
+  }
+  
